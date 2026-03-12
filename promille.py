@@ -1,90 +1,62 @@
-import time
+import streamlit as st
 import matplotlib.pyplot as plt
+import time
 from datetime import datetime, timedelta
 
-def beregn_promille_ved_tid(vekt, kjonn, drikker, sjekk_tid, start_tid):
-    """Beregner promille på et spesifikt tidspunkt."""
-    r = 0.68 if kjonn == "m" else 0.55
-    forbrenning_per_time = 0.15
-    
-    # Finn ut hvor mye alkohol som er drukket frem til sjekk_tid
-    gram_drukket_hittil = sum(d['gram'] for d in drikker if d['tid'] <= sjekk_tid)
-    
-    if not gram_drukket_hittil:
-        return 0.0
-    
-    timer_gatt = (sjekk_tid - start_tid) / 3600
-    promille = (gram_drukket_hittil / (vekt * r)) - (forbrenning_per_time * timer_gatt)
-    
-    return max(0, promille)
+# Sett opp siden
+st.set_page_config(page_title="Promille-Kalkulator", layout="centered")
+st.title("🍺 Øl-Logg & Promillemåler")
 
-def vis_graf(vekt, kjonn, drikker, start_tid):
-    if not drikker:
-        print("Ingen data å vise.")
-        return
+# Brukerinput i sidebar
+with st.sidebar:
+    vekt = st.number_input("Vekt (kg)", min_value=40, max_value=200, value=80)
+    kjonn = st.selectbox("Kjønn", ["Mann", "Kvinne"])
+    r = 0.68 if kjonn == "Mann" else 0.55
 
+# Initialiser session state for å lagre drikker
+if 'drikker' not in st.session_state:
+    st.session_state.drikker = []
+
+# Knapper for å legge til drikke
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("➕ Legg til en Øl (0.33l)"):
+        st.session_state.drikker.append({'tid': time.time(), 'gram': 12})
+with col2:
+    if st.button("➕ Legg til en Stor Øl (0.5l)"):
+        st.session_state.drikker.append({'tid': time.time(), 'gram': 18})
+
+if st.session_state.drikker:
+    start_tid = st.session_state.drikker[0]['tid']
     na_tid = time.time()
-    # Lag tidslinje fra start til 12 timer frem i tid for å se nedtrappingen
-    tidslinje_sekunder = [start_tid + i * 300 for i in range(int((12 * 3600) / 300))]
-    promille_verdier = [beregn_promille_ved_tid(vekt, kjonn, drikker, t, start_tid) for t in tidslinje_sekunder]
     
-    tidsstempler = [datetime.fromtimestamp(t) for t in tidslinje_sekunder]
+    # Beregn nåværende promille
+    total_gram = sum(d['gram'] for d in st.session_state.drikker)
+    timer_gatt = (na_tid - start_tid) / 3600
+    na_promille = max(0, (total_gram / (vekt * r)) - (0.15 * timer_gatt))
     
-    plt.figure(figsize=(10, 5))
-    plt.plot(tidsstempler, promille_verdier, label='Estimert Promille', color='orange', linewidth=2)
-    plt.axhline(y=0.2, color='r', linestyle='--', label='Kjøregrense (0.2)')
-    plt.axvline(x=datetime.fromtimestamp(na_tid), color='blue', linestyle=':', label='Nå')
-    
-    plt.title('Alkoholutvikling over tid')
-    plt.xlabel('Klokkeslett')
-    plt.ylabel('Promille')
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.gcf().autofmt_xdate()
-    
-    print("Viser graf... (Lukk grafvinduet for å fortsette registrering)")
-    plt.show()
+    st.metric("Estimert Promille Nå", f"{na_promille:.2f}")
 
-def main():
-    print("--- Øl-Logg med Graf ---")
-    try:
-        vekt = float(input("Oppgi vekt (kg): "))
-        kjonn = input("Kjønn (m/k): ").lower()
-    except ValueError:
-        print("Feil inndata. Bruker standardverdier (80kg, mann).")
-        vekt, kjonn = 80, "m"
+    # Lag graf
+    tidslinje = [start_tid + i * 900 for i in range(48)] # 12 timer frem
+    promiller = []
+    for t in tidslinje:
+        gram_hittil = sum(d['gram'] for d in st.session_state.drikker if d['tid'] <= t)
+        timer = (t - start_tid) / 3600
+        p = max(0, (gram_hittil / (vekt * r)) - (0.15 * timer))
+        promiller.append(p)
     
-    drikker = []
-    start_tid = None
+    tidsstempler = [datetime.fromtimestamp(t) for t in tidslinje]
     
-    print("\nKommandoer: 'øl' (0.33l), 'stor' (0.5l), 'graf', 'status', 'slutt'")
-    
-    while True:
-        valg = input("\nHandling: ").lower()
-        
-        if valg in ['øl', 'stor']:
-            na = time.time()
-            if not drikker:
-                start_tid = na
-            
-            gram = 12 if valg == 'øl' else 18
-            drikker.append({'tid': na, 'gram': gram})
-            
-            p = beregn_promille_ved_tid(vekt, kjonn, drikker, na, start_tid)
-            print(f"Registrert! Enheter: {len(drikker)}. Nåværende promille: {p:.2f}")
-            
-        elif valg == 'graf':
-            vis_graf(vekt, kjonn, drikker, start_tid)
-            
-        elif valg == 'status':
-            if not drikker:
-                print("Ingen drikker registrert.")
-                continue
-            p = beregn_promille_ved_tid(vekt, kjonn, drikker, time.time(), start_tid)
-            print(f"Status: {len(drikker)} enheter. Promille: {p:.2f}")
-            
-        elif valg == 'slutt':
-            break
+    fig, ax = plt.subplots()
+    ax.plot(tidsstempler, promiller, color='orange', label="Promille")
+    ax.axhline(y=0.2, color='red', linestyle='--', label="Kjøregrense")
+    plt.xticks(rotation=45)
+    ax.legend()
+    st.pyplot(fig)
 
-if __name__ == "__main__":
-    main()
+    if st.button("Nullstill alt"):
+        st.session_state.drikker = []
+        st.rerun()
+else:
+    st.info("Trykk på knappene over for å registrere din første øl!")
