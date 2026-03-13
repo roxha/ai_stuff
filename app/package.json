@@ -1,8 +1,10 @@
 {
-  "name": "promille-app",
+  "name": "app",
   "version": "1.0.0",
   "scripts": {
-    "build": "mkdir -p dist && cp app/index.html dist/",
-    "install": "echo 'No install needed'"
-  }
+    "build": "mkdir -p ../dist && cp index.html ../dist/index.html",
+    "test": "echo 'No tests'",
+    "start": "node index.js"
+  },
+  "dependencies": {}
 }
