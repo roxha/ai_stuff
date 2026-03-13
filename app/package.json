@@ -1,7 +1,8 @@
 {
-  "name": "promille-app",
+  "name": "app",
   "version": "1.0.0",
-  "description": "Minimal file to satisfy build system",
-  "repository": "none",
-  "license": "MIT"
+  "scripts": {
+    "install": "echo 'Skipping npm install'",
+    "build": "echo 'No build'"
+  }
 }
