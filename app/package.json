@@ -1,8 +1,8 @@
 {
-  "name": "app",
+  "name": "promille-app",
   "version": "1.0.0",
   "scripts": {
-    "install": "echo 'Skipping npm install'",
-    "build": "echo 'No build'"
+    "build": "mkdir -p dist && cp app/index.html dist/",
+    "install": "echo 'No install needed'"
   }
 }
