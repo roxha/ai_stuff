@@ -2,9 +2,7 @@
   "name": "app",
   "version": "1.0.0",
   "scripts": {
-    "build": "mkdir -p ../dist && cp index.html ../dist/index.html",
-    "test": "echo 'No tests'",
-    "start": "node index.js"
-  },
-  "dependencies": {}
+    "build": "mkdir -p dist && cp index.html dist/ && (cp -r public dist/ || true) && echo 'Build success'",
+    "install": "echo 'No install needed'"
+  }
 }
