@@ -1,8 +1,0 @@
-{
-  "name": "app",
-  "version": "1.0.0",
-  "scripts": {
-    "install": "echo 'Skipping npm install'",
-    "build": "echo 'No build'"
-  }
-}
