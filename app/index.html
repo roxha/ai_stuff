@@ -2,47 +2,96 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Promille-kalkulator</title>
+    <title>Promille-kalkulator med Assistent</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; background: #f39c12; color: white; font-weight: bold; }
-        #promille-verdi { font-size: 48px; color: #2c3e50; margin: 10px 0; }
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; display: flex; flex-direction: column; align-items: center; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
+        input, select { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; }
+        button { padding: 10px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; background: #3498db; color: white; }
+        #chat-output { background: #f9f9f9; padding: 10px; border-radius: 5px; margin-top: 10px; min-height: 50px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>🍺 Øl-Logg</h1>
-        <div id="promille-verdi">0.00</div>
-        <button onclick="leggTilDrikke(12)">Liten øl (0.33l)</button>
-        <button onclick="leggTilDrikke(18)">Stor øl (0.5l)</button>
-        <canvas id="promilleChart"></canvas>
-        <br>
-        <button style="background:#e74c3c" onclick="localStorage.clear(); location.reload();">Nullstill</button>
-    </div>
 
-    <script>
-        let drikker = JSON.parse(localStorage.getItem('drikker')) || [];
-        function leggTilDrikke(gram) {
-            drikker.push({ tid: Date.now(), gram: gram });
-            localStorage.setItem('drikker', JSON.stringify(drikker));
-            location.reload();
-        }
-        function beregn(tid) {
-            if (!drikker.length) return 0;
-            let timer = (tid - drikker[0].tid) / 3600000;
-            let totalGram = drikker.filter(d => d.tid <= tid).reduce((s, d) => s + d.gram, 0);
-            return Math.max(0, (totalGram / (80 * 0.68)) - (0.15 * timer));
-        }
-        document.getElementById('promille-verdi').innerText = beregn(Date.now()).toFixed(2);
+<div class="card">
+    <h2>Innstillinger</h2>
+    <input type="number" id="vekt" placeholder="Vekt (kg)" onchange="lagreInnstillinger()">
+    <select id="kjonn" onchange="lagreInnstillinger()">
+        <option value="0.68">Mann</option>
+        <option value="0.55">Kvinne</option>
+    </select>
+</div>
+
+<div class="card">
+    <h1>🍺 Øl-Logg</h1>
+    <div id="promille-verdi" style="font-size: 30px; font-weight: bold;">0.00</div>
+    <button onclick="leggTilDrikke(12)">0.33l Øl</button>
+    <button onclick="leggTilDrikke(18)">0.5l Stor Øl</button>
+    <canvas id="promilleChart"></canvas>
+</div>
+
+<div class="card">
+    <h3>Spør assistenten</h3>
+    <input type="text" id="userInput" placeholder="Eks: 'Når kan jeg kjøre bil?' eller 'råd'">
+    <button onclick="svarAssistent()">Spør</button>
+    <div id="chat-output"></div>
+</div>
+
+<script>
+    // --- Logikk ---
+    let drikker = JSON.parse(localStorage.getItem('drikker')) || [];
+    
+    function lagreInnstillinger() {
+        localStorage.setItem('vekt', document.getElementById('vekt').value);
+        localStorage.setItem('kjonn', document.getElementById('kjonn').value);
+        location.reload();
+    }
+
+    // Last inn innstillinger
+    document.getElementById('vekt').value = localStorage.getItem('vekt') || 80;
+    document.getElementById('kjonn').value = localStorage.getItem('kjonn') || 0.68;
+
+    function leggTilDrikke(gram) {
+        drikker.push({ tid: Date.now(), gram: gram });
+        localStorage.setItem('drikker', JSON.stringify(drikker));
+        location.reload();
+    }
+
+    function beregn(tid) {
+        if (!drikker.length) return 0;
+        let v = parseFloat(document.getElementById('vekt').value);
+        let r = parseFloat(document.getElementById('kjonn').value);
+        let timer = (tid - drikker[0].tid) / 3600000;
+        let totalGram = drikker.filter(d => d.tid <= tid).reduce((s, d) => s + d.gram, 0);
+        return Math.max(0, (totalGram / (v * r)) - (0.15 * timer));
+    }
+
+    function svarAssistent() {
+        let input = document.getElementById('userInput').value.toLowerCase();
+        let output = document.getElementById('chat-output');
+        let p = beregn(Date.now());
         
-        const ctx = document.getElementById('promilleChart').getContext('2d');
-        const labels = Array.from({length: 24}, (_, i) => i + ":00");
-        new Chart(ctx, {
-            type: 'line',
-            data: { labels: labels, datasets: [{ label: 'Promille', data: labels.map((_, i) => beregn(Date.now() + i*3600000)), borderColor: 'orange' }] }
-        });
-    </script>
+        if (input.includes('kjøre') || input.includes('edru')) {
+            let timerIgjen = (p / 0.15);
+            output.innerText = p < 0.2 ? "Du er under 0.2 promille nå, men vær forsiktig!" : `Estimert tid til 0.0 promille: ca ${timerIgjen.toFixed(1)} timer. Ikke kjør bil!`;
+        } else if (input.includes('råd') || input.includes('hjelp')) {
+            output.innerText = "Drikk vann mellom hver enhet. Husk at kroppen forbrenner ca 0.15 promille i timen.";
+        } else {
+            output.innerText = "Jeg forsto ikke helt. Prøv: 'Når kan jeg kjøre?' eller 'gi meg råd'.";
+        }
+    }
+
+    // Graf-logikk
+    const ctx = document.getElementById('promilleChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: Array.from({length: 12}, (_, i) => i + "t"),
+            datasets: [{ label: 'Promille', data: Array.from({length: 12}, (_, i) => beregn(Date.now() + i*3600000)), borderColor: 'orange' }]
+        }
+    });
+    document.getElementById('promille-verdi').innerText = beregn(Date.now()).toFixed(2);
+</script>
 </body>
 </html>
