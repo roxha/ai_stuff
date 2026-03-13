@@ -6,11 +6,20 @@ phases:
       python: 3.9
       nodejs: 16
     commands:
-      - echo "Installerer Python-avhengigheter..."
+      - echo "Installerer Python-ting..."
       - cd app && pip install -r requirements.txt
   build:
     commands:
-      - echo "Build ferdig"
+      - echo "Bygger dist-mappe for AWS..."
+      # 1. Gå tilbake til roten
+      - cd ..
+      # 2. Lag mappen 'dist' hvis den ikke finnes
+      - mkdir -p dist
+      # 3. Kopier alt fra 'app'-mappen inn i 'dist'-mappen
+      - cp -r app/* dist/
+      - echo "Kopiering ferdig!"
 artifacts:
+  # Her forteller vi AWS at alt den trenger ligger i dist-mappen
+  base-directory: dist
   files:
     - '**/*'
