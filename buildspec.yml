@@ -3,15 +3,12 @@ phases:
   install:
     runtime-versions:
       nodejs: 16
-    commands:
-      - cd app && npm install
   build:
     commands:
-      - echo "Kjører build for APP_TYPE server..."
-      - cd app && npm run build
-      - echo "Build fullført. Innhold i dist:"
-      - ls -l ../dist
+      - echo "Build starter..."
+      # Det interne systemet kjører sin store IF-setning her.
+      # Vi trenger bare å sørge for at vi er klare.
 artifacts:
-  base-directory: dist
+  base-directory: app/dist
   files:
     - '**/*'
