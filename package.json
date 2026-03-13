@@ -1,0 +1,11 @@
+{
+  "name": "promille-app",
+  "version": "1.0.0",
+  "description": "Python app masquerading as Node for build system",
+  "main": "app.py",
+  "scripts": {
+    "install": "pip install -r requirements.txt",
+    "build": "echo 'No build needed'",
+    "start": "python app.py"
+  }
+}
