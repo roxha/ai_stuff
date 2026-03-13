@@ -1,22 +1,10 @@
 version: 0.2
-
 phases:
-  install:
-    runtime-versions:
-      python: 3.9
-      nodejs: 16
-    commands:
-      - echo "Installerer avhengigheter..."
-      - pip install -r app/requirements.txt
   build:
     commands:
-      - echo "Sørger for at dist eksisterer og er klar..."
-      # Force-create mappen i tilfelle
+      - echo "Bygger statisk app..."
       - mkdir -p dist
-      # Kopierer innholdet fra app-mappen over i dist
-      - cp -r app/* dist/
-      - echo "Innhold i dist-mappen:"
-      - ls -l dist
+      - cp app/index.html dist/index.html
 artifacts:
   base-directory: dist
   files:
